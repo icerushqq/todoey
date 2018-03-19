@@ -8,8 +8,9 @@
 
 import UIKit
 import RealmSwift
+import ChameleonFramework
 
-class CategoryViewController: UITableViewController {
+class CategoryViewController: SwipeTableViewController {
 
     //變數宣告
     let realm = try! Realm()
@@ -18,8 +19,9 @@ class CategoryViewController: UITableViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+        tableView.separatorStyle = .none
         loadCategory()
+       
     }
 
    
@@ -31,10 +33,22 @@ class CategoryViewController: UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+
+        let cell = super.tableView(tableView, cellForRowAt: indexPath)
         
-        let cell = tableView.dequeueReusableCell(withIdentifier: "CategoryCell", for: indexPath)
+        if let category = categoryArray?[indexPath.row] {
+            cell.textLabel?.text = category.name
+            guard let categoryColor = UIColor(hexString: category.color) else {
+                fatalError()
+            }
+            
+            cell.backgroundColor = categoryColor
+            
+            cell.textLabel?.textColor = ContrastColorOf(categoryColor, returnFlat: true)
+            
+        }
         
-        cell.textLabel?.text = categoryArray?[indexPath.row].name ?? "no category added"
+        
         
         return cell
     }
@@ -73,6 +87,22 @@ class CategoryViewController: UITableViewController {
         }
         tableView.reloadData()
     }
+    
+    //MARK: - Delete Date from Swipe
+    override func updateModel(at indexPath: IndexPath) {
+        
+        if let category = self.categoryArray?[indexPath.row] {
+            do {
+                try self.realm.write {
+                    self.realm.delete(category)
+                }
+            } catch {
+                print("delete error \(error)")
+            }
+        }
+    }
+    
+    
     //MARK: - Add new Category
     
     @IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
@@ -86,7 +116,7 @@ class CategoryViewController: UITableViewController {
             
             let newCategory = Category()
             newCategory.name = textField.text!
-            
+            newCategory.color = UIColor.randomFlat.hexValue()
             
             self.save(category: newCategory)
             
@@ -105,3 +135,5 @@ class CategoryViewController: UITableViewController {
     
    
 }
+//MARK: swipe delegate methods
+
